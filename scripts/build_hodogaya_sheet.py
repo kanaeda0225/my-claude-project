@@ -10,7 +10,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+_REPO = Path(__file__).parent.parent
+sys.path.insert(0, str(_REPO / ".claude/skills/takimoto-presentation/scripts"))
 from sheet_renderer import ChartSpec, Row, SheetConfig, render  # noqa: E402
 
 
