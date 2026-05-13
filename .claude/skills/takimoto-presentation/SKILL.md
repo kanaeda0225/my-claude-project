@@ -1,6 +1,6 @@
 ---
 name: takimoto-presentation
-description: 瀧本ゼミ形式の株式投資推奨発表(スライド+スプレッドシート)を生成する。入力はストーリーmarkdown + 決算短信PDF。出力は Google Sheets/Slides にインポート可能な .xlsx と .pptx。
+description: 瀧本ゼミ形式の株式投資推奨資料を生成する。入力ドキュメント(markdown)+ 決算短信/有価証券報告書PDFから、Google Sheets/Slidesにインポート可能な.xlsxと.pptxを出力する。「瀧本ゼミ形式で資料作って」「投資推奨のスライド・スプシ作って」「バリュエーションシート作って」のような依頼で起動。
 ---
 
 # Takimoto Presentation Generator
@@ -11,16 +11,17 @@ description: 瀧本ゼミ形式の株式投資推奨発表(スライド+スプ�
 
 ユーザーが以下のような依頼をしたとき:
 - 「瀧本ゼミ形式で資料作って」「瀧本ゼミの発表資料生成」
-- 「投資推奨のスライド・スプシ作って」
+- 「投資推奨のスライド・スプシ作って」「バリュエーションシート作って」
 - 入力markdown(`samples/*.md`形式)を渡してきて発表資料化を依頼
+- `/takimoto-presentation` を明示的に呼び出した時
 
 ## 必要な入力
 
 | 入力 | 必須? | 形式 | 用途 |
 | :---- | :---- | :---- | :---- |
 | ストーリーmarkdown | **必須** | `samples/*.md`の構造に従う | スライド+スプシの骨組み・物語・仮定 |
-| 決算短信PDF (有報・半期報) | スプシ生成に必須 | TDnet/EDINET配布のPDF | 過去実績の数値、セグメント情報、KPI |
-| ユーザーが直接指定する数値 | 任意 | 質問で取得 | PER感応度、ピア企業の選定 |
+| 決算短信/有報PDF | スプシ生成に必須 | TDnet/EDINET配布のPDF(複数可、フォルダ指定OK) | 過去実績の数値、セグメント情報、KPI |
+| ユーザーが直接指定する数値 | 任意 | AskUserQuestionで取得 | PER感応度、ピア企業の選定 |
 
 `samples/4112-hodogaya.md` を入力markdownの参照モデルとせよ。発表者・推奨・投資期間・章立て・因数分解表・ミスプライシング表・章別本文・Appendixが揃った構造。
 
@@ -216,10 +217,100 @@ description: 瀧本ゼミ形式の株式投資推奨発表(スライド+スプ�
     └── extract_yuho.py         ← yuho PDF抽出ユーティリティ
 ```
 
+## 実行手順 (このスキルを呼ばれた時)
+
+### Step 0: 入力の所在を確認
+
+ユーザーに次を確認(自明なら省略):
+1. **ストーリーmarkdown** のパス (例: `samples/4971-mec.md`)
+2. **決算短信PDFの場所** (フォルダパス、例: `~/Downloads/4971-yuhos/`)
+   - 無ければスライドのみ生成 → スプシは骨組み+TODOで提示
+
+### Step 1: 環境セットアップ
+
+依存ライブラリと poppler-utils が必須:
+
+```bash
+which pdftotext || sudo apt-get install -y poppler-utils
+python3 -c "import openpyxl, pptx" 2>/dev/null || pip3 install openpyxl python-pptx
+```
+
+### Step 2: PDFから財務データを抽出 (スプシ生成時のみ)
+
+```python
+import sys
+sys.path.insert(0, "<skill_dir>/scripts")
+from extract_yuho import extract_folder
+financials = extract_folder("~/Downloads/4971-yuhos/")
+# → indicators_5y, pl, sga, product_breakdown, segment_info,
+#    shares_outstanding, mid_term_plan が dict で返る
+```
+
+### Step 3: スライドを生成
+
+`scripts/pptx_renderer.py` の `Slide` `SlideDeckConfig` `render` を import:
+
+```python
+from pptx_renderer import Slide, SlideDeckConfig, render
+slides = [
+    Slide(kind="content", title="...", subtitle="...", bullets=[...]),
+    Slide(kind="table",   title="...", subtitle="...",
+          table_headers=[...], table=[...]),
+    # ...
+]
+deck = SlideDeckConfig(title="【4971】メック",
+                       subtitle="推奨：BUY\n目標株価：...\n投資期間：...",
+                       presenter="...", slides=slides)
+render(deck, "output.pptx")
+```
+
+スライド構成は `reference/slide_structure.md` に厳格に従う。
+スライドの視覚原則は `reference/slide_design.md` を厳守。
+
+### Step 4: スプシを生成
+
+`scripts/sheet_renderer.py` の `Row` `SheetConfig` `ChartSpec` `render` を import:
+
+```python
+from sheet_renderer import Row, SheetConfig, ChartSpec, render
+config = SheetConfig(
+    name="4971_valuation",
+    year_columns=["FY24/12 実", "FY25/12 実", "FY26/12 予", "FY27/12 予"],
+    rows=[
+        Row(label="【売上高】", is_section_header=True),
+        Row(label="売上高 合計", values=[18234, 20948, ...], note="..."),
+        # ... 因数分解は markdown を読んで FY26+ を自分で計算 ...
+    ],
+    charts=[ChartSpec(title="...", bar_rows=[...], line_rows=[...], anchor="J2")],
+)
+todos = render(config, "output.xlsx")
+```
+
+スプシ構成は `reference/sheet_structure.md` に従い、業績タイプの判定は `reference/factor_decomp_patterns.md` を見て。
+
+### Step 5: 検証
+
+```python
+sys.path.insert(0, "<skill_dir>/scripts")
+from validate_consistency import validate, print_findings
+findings = validate("output.xlsx")
+print_findings(findings)
+```
+
+ERROR が出たら直す。WARN は備考で説明可能なら残してOK。
+
+### Step 6: ユーザーへ報告
+
+- 出力ファイルのパス
+- 残ったTODOと推論で埋めた箇所のリスト
+- 視覚的レビューを促す一文 (「実際に開いて確認してください」)
+
 ## 参考例
 
 開発リポジトリ `kanaeda0225/my-claude-project` の以下:
 
 - `samples/*.md` — 5パターンの業績タイプの入力markdown例
 - `outputs/4971-mec-valuation.xlsx` — メックの生成済みスプシ(FY24実績一致確認済み)
+- `outputs/4971-mec-slides.pptx` — スライドマスター的な統一感で生成された.pptx
 - `samples/4112-hodogaya.md` — もっとも整った入力例
+- `scripts/build_*_slides.py` — 5銘柄分の build スクリプト(few-shot として参考に)
