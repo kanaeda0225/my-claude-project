@@ -1,6 +1,6 @@
 """Build the 4971 MEC slide deck (.pptx).
 
-Demo of the takimoto-presentation skill's slide renderer.
+Demo of the takimoto-slides skill's slide renderer.
 Source: samples/4971-mec.md (narrative) + financial PDFs (numbers).
 """
 from __future__ import annotations
@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 _REPO = Path(__file__).parent.parent
-sys.path.insert(0, str(_REPO / ".claude/skills/takimoto-presentation/scripts"))
+sys.path.insert(0, str(_REPO / ".claude/skills/takimoto-slides/scripts"))
 from pptx_renderer import Slide, SlideDeckConfig, render  # noqa: E402
 
 

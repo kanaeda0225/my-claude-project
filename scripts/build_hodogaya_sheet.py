@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 _REPO = Path(__file__).parent.parent
-sys.path.insert(0, str(_REPO / ".claude/skills/takimoto-presentation/scripts"))
+sys.path.insert(0, str(_REPO / ".claude/skills/takimoto-valuation/scripts"))
 from sheet_renderer import ChartSpec, Row, SheetConfig, render  # noqa: E402
 
 

@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 _REPO = Path(__file__).parent.parent
-sys.path.insert(0, str(_REPO / ".claude/skills/takimoto-presentation/scripts"))
+sys.path.insert(0, str(_REPO / ".claude/skills/takimoto-slides/scripts"))
 from pptx_renderer import Slide, SlideDeckConfig, render  # noqa: E402
 
 

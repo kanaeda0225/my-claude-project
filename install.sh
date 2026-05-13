@@ -1,40 +1,66 @@
 #!/bin/bash
-# Install the takimoto-presentation skill to ~/.claude/skills/ for global use.
+# Install the takimoto skills to ~/.claude/skills/ for global use.
+#
+# Two skills are installed:
+#   - takimoto-slides     : generates .pptx from markdown
+#   - takimoto-valuation  : generates .xlsx from markdown + financial PDFs
 #
 # Usage:
-#   bash install.sh           # install
-#   bash install.sh --link    # symlink instead of copy (for active development)
+#   bash install.sh           # install (copy)
+#   bash install.sh --link    # symlink (for active development)
 #   bash install.sh --uninstall
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_SRC="$SCRIPT_DIR/.claude/skills/takimoto-presentation"
-SKILL_DEST="$HOME/.claude/skills/takimoto-presentation"
+SKILLS_SRC="$SCRIPT_DIR/.claude/skills"
+SKILLS_DEST="$HOME/.claude/skills"
 
 mode="${1:-install}"
 
+SKILL_NAMES=(takimoto-slides takimoto-valuation)
+# Legacy names from earlier development that we now clean up
+LEGACY_NAMES=(takimoto-presentation)
+
+# Always clean up legacy names first (migration)
+for legacy in "${LEGACY_NAMES[@]}"; do
+  legacy_path="$SKILLS_DEST/$legacy"
+  if [ -e "$legacy_path" ] || [ -L "$legacy_path" ]; then
+    rm -rf "$legacy_path"
+    echo "✓ Removed legacy: $legacy_path"
+  fi
+done
+
 case "$mode" in
   --uninstall)
-    if [ -e "$SKILL_DEST" ]; then
-      rm -rf "$SKILL_DEST"
-      echo "✓ Removed $SKILL_DEST"
-    else
-      echo "(nothing to remove)"
-    fi
+    for s in "${SKILL_NAMES[@]}"; do
+      target="$SKILLS_DEST/$s"
+      if [ -e "$target" ]; then
+        rm -rf "$target"
+        echo "✓ Removed $target"
+      fi
+    done
     exit 0
     ;;
   --link)
-    mkdir -p "$(dirname "$SKILL_DEST")"
-    [ -e "$SKILL_DEST" ] && rm -rf "$SKILL_DEST"
-    ln -s "$SKILL_SRC" "$SKILL_DEST"
-    echo "✓ Symlinked $SKILL_SRC → $SKILL_DEST"
+    mkdir -p "$SKILLS_DEST"
+    for s in "${SKILL_NAMES[@]}"; do
+      src="$SKILLS_SRC/$s"
+      dest="$SKILLS_DEST/$s"
+      [ -e "$dest" ] && rm -rf "$dest"
+      ln -s "$src" "$dest"
+      echo "✓ Symlinked $src → $dest"
+    done
     ;;
   install|"")
-    mkdir -p "$(dirname "$SKILL_DEST")"
-    [ -e "$SKILL_DEST" ] && rm -rf "$SKILL_DEST"
-    cp -r "$SKILL_SRC" "$SKILL_DEST"
-    echo "✓ Copied skill to $SKILL_DEST"
+    mkdir -p "$SKILLS_DEST"
+    for s in "${SKILL_NAMES[@]}"; do
+      src="$SKILLS_SRC/$s"
+      dest="$SKILLS_DEST/$s"
+      [ -e "$dest" ] && rm -rf "$dest"
+      cp -r "$src" "$dest"
+      echo "✓ Copied $s to $dest"
+    done
     ;;
   *)
     echo "Usage: $0 [install|--link|--uninstall]" >&2
@@ -54,13 +80,13 @@ else
 fi
 
 if python3 -c "import openpyxl" 2>/dev/null; then
-  echo "✓ openpyxl installed"
+  echo "✓ openpyxl installed (for .xlsx generation)"
 else
   echo "✗ openpyxl missing. Run: pip3 install openpyxl"
 fi
 
 if python3 -c "import pptx" 2>/dev/null; then
-  echo "✓ python-pptx installed"
+  echo "✓ python-pptx installed (for .pptx generation)"
 else
   echo "✗ python-pptx missing. Run: pip3 install python-pptx"
 fi
@@ -68,6 +94,7 @@ fi
 echo ""
 echo "=== Done ==="
 echo "Open a fresh Claude Code session and try one of:"
-echo "  /takimoto-presentation"
-echo "  「瀧本ゼミ形式で資料作って」"
-echo "  「投資推奨のスライド・スプシを作って」"
+echo "  /takimoto-slides       — to generate slides only"
+echo "  /takimoto-valuation    — to generate spreadsheet only"
+echo "  「○○のスライド作って」  → takimoto-slides が起動"
+echo "  「○○のスプシ作って」    → takimoto-valuation が起動"
