@@ -311,9 +311,9 @@ def build_valuation_sheet() -> SheetConfig:
     rows.append(Row(label="【NDI(ニッタ・デュポン) 単体推計とα分解】", is_section_header=True))
 
     rows.append(Row(
-        label="NDI売上 (CY、億円)",
+        label="NDI売上 (CY、百万円)",
         indent=0,
-        values=[260, 280, 300, 327, 360, 410],
+        values=[26_000, 28_000, 30_000, 32_700, 36_000, 41_000],
         is_independent=True,
         note="markdown: CY2025=327億円(+9%)。過去はNitta DuPont IR非開示部分は半導体出荷量と純利益率から推定。FY3/28はCAGR+13%(BSPDN/2nm本格化)",
         importance="★★★",
@@ -372,10 +372,10 @@ def build_valuation_sheet() -> SheetConfig:
         importance="★★",
     ))
     rows.append(Row(
-        label="NDI純利益(推計, 億円)",
+        label="NDI純利益(推計, 百万円)",
         indent=0,
-        values=[None, None, 80, 90, 104, 112],
-        note="NDI持分法利益 ÷ 出資比率50% で逆算 (FY3/26: 4,509百万 ÷ 0.50 = 90億)。NDI営業利益率と税率の整合チェック用",
+        values=[None, None, 8_010, 9_018, 10_400, 11_200],
+        note="NDI持分法利益 ÷ 出資比率50% で逆算 (FY3/26: 4,509百万 ÷ 0.50 = 9,018百万 = 90億)。NDI純利益率 ≒ 9,018/32,700 = 27.6%",
     ))
 
     rows.append(Row(label="", is_blank=True))
