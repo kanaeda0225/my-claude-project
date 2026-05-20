@@ -1,6 +1,11 @@
-# Takimoto Skills
+# my-claude-project — 日本株投資リサーチ + Takimoto Skills
 
-瀧本ゼミ形式の株式投資推奨資料(スライド+バリュエーションシート)をClaude Codeで自動生成する**2つの独立したスキル**。
+このレポジトリには **2種類のもの** が入っている:
+
+1. **Takimoto Skills** — 瀧本ゼミ形式の株式投資推奨資料(スライド+バリュエーションシート)をClaude Codeで自動生成する2つのスキル
+2. **業界リサーチ + 銘柄スクリーニング成果物** — Claude Code on the Web の各セッションで蓄積した日本株リサーチノート群
+
+スキルだけ使いたい人は下記「インストール」へ。リサーチ成果物だけ読みたい人は `research/`, `screening/`, `heat_matrix/` 配下を直接参照。
 
 ## 2つのスキル
 
@@ -90,44 +95,69 @@ bash install.sh --uninstall
 
 ```
 .
-├── .claude/skills/
-│   ├── takimoto-slides/                ← スライド生成スキル
+├── .claude/skills/                     ← Takimoto Skills (install.sh で配布対象)
+│   ├── takimoto-slides/                  スライド生成スキル (.pptx)
 │   │   ├── SKILL.md
-│   │   ├── reference/
-│   │   │   ├── slide_structure.md      章立て規約
-│   │   │   ├── slide_design.md         視覚原則(フォント・余白・色)
-│   │   │   └── asking_user.md          AskUserQuestion テンプレ
-│   │   └── scripts/
-│   │       └── pptx_renderer.py        スライドマスター的な統一レイアウト強制
-│   │
-│   └── takimoto-valuation/             ← バリュエーションシート生成スキル
+│   │   ├── reference/                    章立て / 視覚原則 / AskUserQuestion
+│   │   └── scripts/pptx_renderer.py      統一レイアウト強制
+│   └── takimoto-valuation/               バリュエーションシート生成スキル (.xlsx)
 │       ├── SKILL.md
-│       ├── reference/
-│       │   ├── sheet_structure.md      行構造規約
-│       │   ├── factor_decomp_patterns.md  業績タイプ5種のパターン
-│       │   └── asking_user.md          AskUserQuestion テンプレ(PER, ピア企業)
+│       ├── reference/                    行構造 / 業績タイプ5種 / AskUserQuestion
 │       └── scripts/
-│           ├── sheet_renderer.py       スプシスタイル強制
-│           ├── extract_yuho.py         決算PDFをフォルダ丸ごと抽出
-│           └── validate_consistency.py 整合性検証
+│           ├── sheet_renderer.py         スプシスタイル強制
+│           ├── extract_yuho.py           決算PDFフォルダ丸ごと抽出
+│           └── validate_consistency.py   整合性検証
 │
-├── samples/                            入力markdownの参照例 + テンプレート
-├── scripts/                            5銘柄分のbuildスクリプト (few-shot 参考)
-├── outputs/                            生成済みデモ
+├── samples/                            投資テーゼmarkdown(スキル入力例) — 業績タイプ5種
+├── scripts/                            銘柄別buildスクリプト(few-shot参考) — 7銘柄
+├── outputs/                            スキル生成済みデモ(.pptx / .xlsx) — 7銘柄
+│
+├── research/                           業界・銘柄deep dive レポート
+│   ├── analog-mature-node-supply-japan.md      アナログ半導体逼迫テーマ
+│   ├── companies/                              個別銘柄deep dive (6616/6707/6769/6875)
+│   ├── cpo-optical-integration-universe.md     CPO/光電融合 日本ユニバース
+│   ├── 5232-soc-ln-modulator-triangulation.md  SOC LNモジュレータ三角測量
+│   ├── glass-substrate-packaging-2026.md       ガラス基板パッケージング転換
+│   └── power-infrastructure-transformer-macro.md  変圧器/電力インフラマクロ
+│
+├── screening/                          横断スクリーニング(マクロテーマ → 銘柄リスト)
+│   ├── ai-datacenter-stocks-japan.md          AIデータセンター関連 ~120銘柄
+│   ├── macro-thematic-research.md             34マクロテーマ × 銘柄評価
+│   ├── grid-construction-stocks-japan.md      系統工事業界 銘柄マップ
+│   └── grid-construction-primer.md            系統工事業界 体系プライマー
+│
+├── heat_matrix/                        業界アツさ × 市場注目度マトリクス
+│   ├── _index.md                              全業界スナップショット
+│   ├── _meta_ranking.md                       横断TOP10銘柄ランキング
+│   ├── _growth_screen_skill.md                スクリーニング手法
+│   └── heat_*.md (×13)                        業界別deep dive
+│
 ├── install.sh                          ~/.claude/skills/ への配置スクリプト
 └── README.md                           本ファイル
 ```
+
+## リサーチ成果物の使い方
+
+`research/` `screening/` `heat_matrix/` はそれぞれ別セッションで蓄積したリサーチノート。投資テーマ別に横断検索したい時は ripgrep などでgrepするのが早い:
+
+```bash
+rg -l "CPO" research/ screening/ heat_matrix/
+rg -l "変圧器" .
+```
+
+Obsidian にレポジトリごと開いてグラフビューで見るのも有効。
 
 ## 動作確認
 
 サンプル銘柄でテストするには:
 
 ```bash
-# スプシ(MEC、yuho 必要 — リポ外なので各自準備、~/Downloads/4971-yuhos/ 等を想定)
+# スプシ(yuho 必要 — リポ外なので各自準備、~/Downloads/4971-yuhos/ 等を想定)
 python3 scripts/build_mec_sheet.py
+python3 scripts/build_kanamic_sheet.py    # Excel関数版(リファクタ済)
 
 # スライド(markdown だけで動く、全銘柄)
-for s in mec movin kawaden albalink hodogaya; do
+for s in mec movin kawaden albalink hodogaya nitta kanamic; do
   python3 scripts/build_${s}_slides.py
 done
 
